@@ -22,39 +22,42 @@ contract Rewards is ERC20 {
     mapping(address => mapping(uint256 => bool)) redemptionReceipts;
     mapping(uint256 => uint256) cumulativeMarketVolume;
 
-    constructor() {
+    event LogOperation(address account indexed, uint amount);
+
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         owner = msg.sender;
     }
 
-    function logOperation(address account, uint256 amount) onlyOwner {
+    function logOperation(address account, uint256 amount) external {
         require(msg.sender == owner, "Rewards::logOperation: ONLY_OWNER");
         operationsReceipts[account][period] += amount;
         cumulativeMarketVolume[period] += amount;
 
-        // TODO emit event
+        emit LogOperation(account, amount);
     }
 
-    function endPeriod() {
+    function endPeriod() external {
         require(block.timestamp >= period + PERIOD_DURATION, "Rewards::endPeriod: PERIOD_IN_PROGRESS");
         period = block.timestamp + PERIOD_DURATION;
 
         // TODO emit event
     }
 
-    function getRedeemableOperationReceipts(uint256[] calldata periods) view returns (OperationReceipt[] receipts) {
-        OperationReceipt[] _operationsReceipts;
-
-        // = operationsReceipts[msg.sender];
-
+    // TODO uneccessary?
+    function getRedeemableOperationReceipts(uint256[] calldata periods)
+        external
+        view
+        returns (OperationReceipt[] memory receipts)
+    {
         for (uint256 i = 0; i < periods.length; i++) {
             if (!redemptionReceipts[msg.sender][periods[i]]) {
-                receipts.push(_operationsReceipts[periods[i]]);
+                receipts[i] = operationsReceipts[periods[i]];
             }
         }
     }
 
-    function redeemRewards(uint256[] periods) {
-        uint256 _operationsReceipts = operationsReceipts[msg.sender];
+    function redeemRewards(uint256[] calldata periods) external {
+        uint256 memory _operationsReceipts = operationsReceipts[msg.sender];
         uint256 rewards;
 
         for (uint256 i = 0; i < periods.length; i++) {

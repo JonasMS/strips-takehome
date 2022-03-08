@@ -22,7 +22,7 @@ contract Rewards is ERC20 {
     mapping(address => mapping(uint256 => bool)) redemptionReceipts;
     mapping(uint256 => uint256) cumulativeMarketVolume;
 
-    event LogOperation(address account indexed, uint amount);
+    event LogOperation(address indexed account, uint256 amount);
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         owner = msg.sender;
@@ -44,20 +44,19 @@ contract Rewards is ERC20 {
     }
 
     // TODO uneccessary?
-    function getRedeemableOperationReceipts(uint256[] calldata periods)
-        external
-        view
-        returns (OperationReceipt[] memory receipts)
-    {
-        for (uint256 i = 0; i < periods.length; i++) {
-            if (!redemptionReceipts[msg.sender][periods[i]]) {
-                receipts[i] = operationsReceipts[periods[i]];
-            }
-        }
-    }
+    // function getRedeemableOperationReceipts(uint256[] calldata periods)
+    //     external
+    //     view
+    //     returns (OperationReceipt[] memory receipts)
+    // {
+    //     for (uint256 i = 0; i < periods.length; i++) {
+    //         if (!redemptionReceipts[msg.sender][periods[i]]) {
+    //             receipts[i] = operationsReceipts[periods[i]];
+    //         }
+    //     }
+    // }
 
     function redeemRewards(uint256[] calldata periods) external {
-        uint256 memory _operationsReceipts = operationsReceipts[msg.sender];
         uint256 rewards;
 
         for (uint256 i = 0; i < periods.length; i++) {

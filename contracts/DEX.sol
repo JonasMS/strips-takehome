@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.4;
 
-import RewardsContract from "./Rewards.sol";
-import IRewardsContract from "./IRewards.sol";
+import "./Rewards.sol";
+import "./IRewards.sol";
 
 import "hardhat/console.sol";
 
 contract DEX {
     mapping(address => uint256) public balanceOfLongs;
     mapping(address => uint256) public balanceOfShorts;
-    address rewardsContract public;
+    Rewards public rewardsContract;
 
     enum Position {
         Long,
@@ -20,8 +20,8 @@ contract DEX {
         Open,
         Close
     }
-    
-    event ExecutePosition(address indexed, Position indexed, uint);
+
+    event ExecutePosition(address indexed, Position indexed, uint256);
 
     constructor() {
         /*
@@ -29,7 +29,7 @@ contract DEX {
                 Ideally, a single rewards contract can serve multiple DEX contracts,
                 each created at different times.
         */
-        rewardsContract = new RewardsContract("DexRewards", "DRD");
+        rewardsContract = new Rewards("DexRewards", "DRD");
     }
 
     function openPosition(Position position) external payable {
@@ -44,16 +44,16 @@ contract DEX {
         // emit event
         // emit ExecutePosition(msg.sender, TradeType.Open, msg.value);
         // update rewards
-        IRewardsContract(rewardsContract).logOperation(msg.sender, msg.value);
+        Rewards(rewardsContract).logOperation(msg.sender, msg.value);
     }
 
     function closePosition(Position position, uint256 amount) external {
         if (position == Position.Long) {
             require(balanceOfLongs[msg.sender] >= amount, "DEX::closePosition: INSUFFICIENT_LONG_BALANCE");
-            balanceOfLongs[msg.sender] -= msg.value;
+            balanceOfLongs[msg.sender] -= amount;
         } else if (position == Position.Short) {
             require(balanceOfShorts[msg.sender] >= amount, "DEX::closePosition: INSUFFICIENT_SHORT_BALANCE");
-            balanceOfShorts[msg.sender] -= msg.value;
+            balanceOfShorts[msg.sender] -= amount;
         } else {
             revert("DEX::closePosition: INVALID_POSITION");
         }
@@ -61,7 +61,6 @@ contract DEX {
         // emit event
         // emit ExecutePosition(msg.sender, TradeType.close, msg.value);
         // update rewards
-        IRewardsContract(rewardsContract).logOperation(msg.sender, msg.value);
-
+        Rewards(rewardsContract).logOperation(msg.sender, amount);
     }
 }

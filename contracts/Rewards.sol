@@ -28,10 +28,11 @@ contract Rewards is ERC20 {
     mapping(uint256 => uint256) cumulativeMarketVolume;
 
     event LogOperation(address indexed account, uint256 amount);
-    event EndPeriod(uint256 indexed period, uint256 cmv);
+    event EndPeriod(uint256 indexed period);
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         owner = msg.sender;
+        period = block.timestamp;
     }
 
     function logOperation(address account, uint256 amount) external {
@@ -42,12 +43,11 @@ contract Rewards is ERC20 {
         emit LogOperation(account, amount);
     }
 
-    function endPeriod(uint256 cmv) external {
+    function endPeriod() external {
         require(block.timestamp >= period + PERIOD_DURATION, "Rewards::endPeriod: PERIOD_IN_PROGRESS");
-        cumulativeMarketVolume[period] = cmv;
         period = block.timestamp + PERIOD_DURATION;
 
-        emit EndPeriod(period, cmv);
+        emit EndPeriod(period);
     }
 
     // TODO uneccessary?
@@ -63,7 +63,7 @@ contract Rewards is ERC20 {
     //     }
     // }
 
-    function redeemRewards(uint256[] calldata periods) external {
+    function redeemRewards(address account, uint256[] calldata periods) external {
         uint256 rewards;
 
         for (uint256 i = 0; i < periods.length; i++) {
@@ -71,17 +71,17 @@ contract Rewards is ERC20 {
             require(periods[i] < period && periods[i] > 0, "Rewards::redeemReards: INVALID_PERIOD");
             // can't be 'redeemed == true'
             require(
-                !redemptionReceipts[msg.sender][periods[i]],
+                !redemptionReceipts[account][periods[i]],
                 "Rewards::redeemRewards: PERIOD_REWARDS_ALREADY_REDEEMED"
             );
 
             // calculate rewards
-            uint256 ctv = operationsReceipts[msg.sender][periods[i]];
+            uint256 ctv = operationsReceipts[account][periods[i]];
             uint256 cmv = cumulativeMarketVolume[periods[i]];
             rewards += ((ctv * 387) / 1000) / cmv;
-            redemptionReceipts[msg.sender][periods[i]] = true;
+            redemptionReceipts[account][periods[i]] = true;
         }
 
-        _mint(msg.sender, rewards);
+        _mint(account, rewards);
     }
 }

@@ -25,7 +25,6 @@ describe("Unit Tests", () => {
   const jumpPeriods = async (n: number) => {
     for (let i = 0; i < n; i++) {
       await network.provider.send("evm_increaseTime", [PERIOD_LENGTH]);
-      await dex.endPeriod();
     }
   };
 
@@ -41,9 +40,8 @@ describe("Unit Tests", () => {
     }
   };
 
-  before(async function () {
+  before(async () => {
     signers = await ethers.getSigners();
-    console.log("SIGNERS B: ", signers);
     [admin, account1, account2, account3] = signers;
     signers = signers.slice(1);
   });
@@ -55,41 +53,39 @@ describe("Unit Tests", () => {
     });
 
     describe("redeemRewards", async () => {
-      console.log("SIGNERS: ", signers);
-      // open position x 3
-      await openPosition(signers.slice(0, 3), [ONE_ETH, ONE_ETH, TWO_ETH]);
+      it("Should redeem rewards", async () => {
+        // open position x 3
+        await openPosition(signers.slice(0, 3), [ONE_ETH, ONE_ETH, TWO_ETH]);
 
-      // jump to next period
-      await jumpPeriods(1);
+        // jump to next period
+        await jumpPeriods(1);
 
-      // open position x 5
+        // open position x 5
 
-      await openPosition(signers.slice(0, 5), [ONE_ETH, ONE_ETH, TWO_ETH, TWO_ETH, TWO_ETH]);
+        await openPosition(signers.slice(0, 5), [ONE_ETH, ONE_ETH, TWO_ETH, TWO_ETH, TWO_ETH]);
 
-      // jump to next period
-      await jumpPeriods(1);
+        // jump to next period
+        await jumpPeriods(1);
 
-      await openPosition([account2, account3], [ONE_ETH, ONE_ETH]);
+        await openPosition([account2, account3], [ONE_ETH, ONE_ETH]);
 
-      // close position
-      await closePosition([account1], [TWO_ETH]);
+        // close position
+        await closePosition([account1], [TWO_ETH]);
 
-      // jump to next period
+        // jump to next period
 
-      await jumpPeriods(1);
+        await jumpPeriods(1);
 
-      // get periods where account1 executed a trade
-      const rewardsContractAddress = await dex.rewardsContract();
-      const contract = await ethers.getContractFactory("Rewards");
-      const rewards = contract.attach(rewardsContractAddress);
-      const filters = rewards.filters.logOperation();
-      const events = await rewards.queryFilter(filters);
+        // get periods where account1 executed a trade
+        const rewardsContractAddress = await dex.rewardsContract();
+        const contract = await ethers.getContractFactory("Rewards");
+        const rewards = contract.attach(rewardsContractAddress);
 
-      console.log("EVENTS: ", events);
-
-      // redeem rewards
-
-      //   dex.connect(account1).redeemRewards([]);
+        // redeem rewards
+        await dex.connect(account1).redeem();
+        console.log("REWARDS BAL: ", (await rewards.balanceOf(account1.address)).toString());
+        //   dex.connect(account1).redeemRewards([]);
+      });
     });
   });
 });

@@ -44,9 +44,6 @@ contract DEX {
             revert("DEX::openPosition: INVALID_POSITION");
         }
 
-        // emit event
-        // emit ExecutePosition(msg.sender, TradeType.Open, msg.value);
-        // update rewards
         Rewards(rewardsContract).logOperation(msg.sender, msg.value);
     }
 
@@ -61,24 +58,10 @@ contract DEX {
             revert("DEX::closePosition: INVALID_POSITION");
         }
 
-        // emit event
-        // emit ExecutePosition(msg.sender, TradeType.close, msg.value);
-        // update rewards
         Rewards(rewardsContract).logOperation(msg.sender, amount);
     }
 
-    /*
-        NOTE:
-            This fxn is effectively duplicated in the Rewards contract
-            which is most likely unecessary.
-    */
-    function endPeriod() external {
-        require(block.timestamp >= curPeriodEndDate, "DEX::endPeriod: PERIOD_IN_PROGRESS");
-        curPeriodEndDate += PERIOD_DURATION;
-        Rewards(rewardsContract).endPeriod();
-    }
-
-    function redeemRewards(uint256[] calldata periods) external {
-        Rewards(rewardsContract).redeemRewards(msg.sender, periods);
+    function redeem() external {
+        Rewards(rewardsContract).redeem(msg.sender);
     }
 }
